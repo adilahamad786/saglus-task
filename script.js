@@ -4,9 +4,8 @@ const draftBtn = document.querySelector("#draft");
 const generateLink = document.querySelector("#generate");
 const saveBtn = document.querySelector("#save");
 
-let content = "";
 let fileName = "index.html";
-let type = "text/html"
+let type = "text/html";
 
 let indexFileHandler;
 let draftFileHandler;
@@ -34,6 +33,10 @@ async function getHtmlDoc(fileHandler) {
 }
 
 async function operation() {
+    if (!indexFileHandler || !draftFileHandler) {
+        throw new Error("Please select all files!")
+    }
+
     let indexHtmlDoc = await getHtmlDoc(indexFileHandler);
     let draftHtmlDoc = await getHtmlDoc(draftFileHandler);
 
@@ -48,27 +51,38 @@ async function operation() {
         }
     });
 
-    console.log(draftHtmlDoc);
-
     for (let element of draftHtmlDoc.body.children) {
         const currElement = element.cloneNode(true);
         indexHtmlDoc.body.append(currElement);
     }
 
-    content = new XMLSerializer().serializeToString(indexHtmlDoc);
+    let indexHtmlText = new XMLSerializer().serializeToString(indexHtmlDoc);
+
+    return indexHtmlText;
 }
 
 
 saveBtn.addEventListener('click', async function saveFile() {
-    await operation()
-    let stream = await indexFileHandler.createWritable();
-    await stream.write(content);
-    await stream.close();
+    try {
+        let indexHtmlText = await operation()
+        
+        let stream = await indexFileHandler.createWritable();
+        await stream.write(indexHtmlText);
+        await stream.close();
+    } catch (error) {
+        return alert(error.message);
+    }
 });
 
 
-generateLink.addEventListener("click", function download() {
-    var file = new Blob([content], {type: type});
-    generateLink.href = URL.createObjectURL(file);
-    generateLink.download = fileName;
+generateLink.addEventListener("click", async function download() {
+    try {
+        let indexHtmlText = await operation();
+        
+        var file = new Blob([indexHtmlText], {type: type});
+        generateLink.href = URL.createObjectURL(file);
+        generateLink.download = fileName;
+    } catch (error) {
+        return alert(error.message);
+    }
 });
