@@ -1,4 +1,6 @@
-const fileBtn = document.querySelector("#file");
+const indexBtn = document.querySelector("#index");
+const draftBtn = document.querySelector("#draft");
+
 const generateLink = document.querySelector("#generate");
 const saveBtn = document.querySelector("#save");
 
@@ -6,30 +8,64 @@ let content = "";
 let fileName = "index.html";
 let type = "text/html"
 
-let fileHandler;
+let indexFileHandler;
+let draftFileHandler;
 
-fileBtn.addEventListener("click", async function () {
-    [fileHandler] = await window.showOpenFilePicker();
+async function loadFile () {
+    let [fileHandler] = await window.showOpenFilePicker();
+
+    if (fileHandler.name === "index.html") {
+        indexFileHandler = fileHandler;
+    } else if (fileHandler.name === "draft.html") {
+        draftFileHandler = fileHandler;
+    }
+}
+
+indexBtn.addEventListener("click", loadFile);
+draftBtn.addEventListener("click", loadFile);
+
+async function getHtmlDoc(fileHandler) {
     let file = await fileHandler.getFile();
     let fileText = await file.text();
 
-    let html = new DOMParser().parseFromString(fileText, "text/html");;
+    let htmlDocument = new DOMParser().parseFromString(fileText, "text/html");;
 
-    let h2 = document.createElement("h2");
-    h2.textContent = "Yes, Bro!"
+    return htmlDocument;
+}
 
-    html.body.append(h2);
+async function operation() {
+    let indexHtmlDoc = await getHtmlDoc(indexFileHandler);
+    let draftHtmlDoc = await getHtmlDoc(draftFileHandler);
 
-    content = new XMLSerializer().serializeToString(html);
+    const existIds = [];
 
-    console.log(content);
-});
+    indexHtmlDoc.querySelectorAll("[id]")
+        .forEach(element => existIds.push(element.id));
+
+    draftHtmlDoc.querySelectorAll("[id]").forEach(element => {
+        if (existIds.includes(element.id)) {
+            element.id = Math.round(Math.random() * 1000 + 100);
+        }
+    });
+
+    console.log(draftHtmlDoc);
+
+    for (let element of draftHtmlDoc.body.children) {
+        const currElement = element.cloneNode(true);
+        indexHtmlDoc.body.append(currElement);
+    }
+
+    content = new XMLSerializer().serializeToString(indexHtmlDoc);
+}
+
 
 saveBtn.addEventListener('click', async function saveFile() {
-    let stream = await fileHandler.createWritable();
+    await operation()
+    let stream = await indexFileHandler.createWritable();
     await stream.write(content);
     await stream.close();
 });
+
 
 generateLink.addEventListener("click", function download() {
     var file = new Blob([content], {type: type});
