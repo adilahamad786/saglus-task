@@ -27,14 +27,14 @@ async function getHtmlDoc(fileHandler) {
     let file = await fileHandler.getFile();
     let fileText = await file.text();
 
-    let htmlDocument = new DOMParser().parseFromString(fileText, "text/html");;
+    let htmlDocument = new DOMParser().parseFromString(fileText, "text/html");
 
     return htmlDocument;
 }
 
 async function operation() {
     if (!indexFileHandler || !draftFileHandler) {
-        throw new Error("Please select all files!")
+        throw new Error("Please select both index.html and draft.html files!")
     }
 
     let indexHtmlDoc = await getHtmlDoc(indexFileHandler);
@@ -82,6 +82,7 @@ generateLink.addEventListener("click", async function download() {
         var file = new Blob([indexHtmlText], {type: type});
         generateLink.href = URL.createObjectURL(file);
         generateLink.download = fileName;
+
     } catch (error) {
         return alert(error.message);
     }
